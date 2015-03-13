@@ -130,23 +130,7 @@ class ConfigModelComponent extends ConfigModelForm
 		if (isset($data['params']) && isset($data['params']['rules']))
 		{
 			$rules = new JAccessRules($data['params']['rules']);
-			$asset = JTable::getInstance('asset');
-
-			if (!$asset->loadByName($data['option']))
-			{
-				$root = JTable::getInstance('asset');
-				$root->loadByName('root.1');
-				$asset->name = $data['option'];
-				$asset->title = $data['option'];
-				$asset->setLocation($root->id, 'last-child');
-			}
-
-			$asset->rules = (string) $rules;
-
-			if (!$asset->check() || !$asset->store())
-			{
-				throw new RuntimeException($table->getError());
-			}
+			$rules->storeRules($data['option']);
 
 			// We don't need this anymore
 			unset($data['option']);

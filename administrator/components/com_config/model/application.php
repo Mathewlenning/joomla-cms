@@ -115,23 +115,13 @@ class ConfigModelApplication extends ConfigModelForm
 				return false;
 			}
 
-			$asset = JTable::getInstance('asset');
-
-			if ($asset->loadByName('root.1'))
+			try
 			{
-				$asset->rules = (string) $rules;
-
-				if (!$asset->check() || !$asset->store())
-				{
-					$app->enqueueMessage(JText::_('SOME_ERROR_CODE'), 'error');
-
-					return;
-				}
+				$rules->storeRules('root.1');
 			}
-			else
+			catch(ErrorException $e)
 			{
-				$app->enqueueMessage(JText::_('COM_CONFIG_ERROR_ROOT_ASSET_NOT_FOUND'), 'error');
-
+				$app->enqueueMessage($e->getMessage(), 'error');
 				return false;
 			}
 
