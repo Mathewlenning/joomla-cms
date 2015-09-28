@@ -509,7 +509,23 @@ final class JApplicationSite extends JApplicationCms
 		}
 
 		// Allows for overriding the active template from the request
-		$template->template = $this->input->getCmd('template', $template->template);
+		$template_override = $this->input->getCmd('template', '');
+
+		// Only set template override if it is a valid template (= it exists and is enabled)
+		if (!empty($template_override))
+		{
+			if (file_exists(JPATH_THEMES . '/' . $template_override . '/index.php'))
+			{
+				foreach ($templates as $tmpl)
+				{
+					if ($tmpl->template == $template_override)
+					{
+						$template->template = $template_override;
+						break;
+					}
+				}
+			}
+		}
 
 		// Need to filter the default value as well
 		$template->template = JFilterInput::getInstance()->clean($template->template, 'cmd');
@@ -809,6 +825,10 @@ final class JApplicationSite extends JApplicationCms
 			{
 				$this->template->params = new Registry($styleParams);
 			}
+
+			// Store the template and its params to the config
+			$this->set('theme', $this->template->template);
+			$this->set('themeParams', $this->template->params);
 		}
 	}
 }
