@@ -43,15 +43,16 @@ abstract class JHtmlGrid
 		$task = ($value) ? $taskOff : $taskOn;
 		$toggle = (!$task) ? false : true;
 
+		$ui = new JHtmlElement('a', array('class' => 'grid_'. $bool));
+
 		if ($toggle)
 		{
-			return '<a class="grid_' . $bool . ' hasTooltip" title="' . $title . '" rel="{id:\'cb' . $i . '\', task:\'' . $task
-				. '\'}" href="#toggle"></a>';
+			$ui->addAttribute('title', $title);
+			$ui->addAttribute('rel', '{id:\'cb' . $i . '\', task:\'' . $task . '\'}');
+			$ui->addAttribute('href', '#toggle');
 		}
-		else
-		{
-			return '<a class="grid_' . $bool . '"></a>';
-		}
+
+		return $ui->__toString();
 	}
 
 	/**
@@ -87,28 +88,38 @@ abstract class JHtmlGrid
 			$direction = ($direction == 'desc') ? 'asc' : 'desc';
 		}
 
-		$html = '<a href="#" onclick="Joomla.tableOrdering(\'' . $order . '\',\'' . $direction . '\',\'' . $task . '\');return false;"'
-			. ' class="hasTooltip" title="' . JHtml::tooltipText(($tip ? $tip : $title), 'JGLOBAL_CLICK_TO_SORT_THIS_COLUMN') . '">';
+		$onclick = 'Joomla.tableOrdering(\'' . $order . '\',\'' . $direction . '\',\'' . $task . '\');return false;';
+		$tipTitle = JHtml::tooltipText(($tip ? $tip : $title), 'JGLOBAL_CLICK_TO_SORT_THIS_COLUMN');
 
-		if (isset($title['0']) && $title['0'] == '<')
-		{
-			$html .= $title;
-		}
-		else
-		{
-			$html .= JText::_($title);
-		}
+
+		$ui = new JHtmlElement('a', array('href' => '#', 'onclick' => $onclick, 'class' => 'hasTooltip', 'title' => $tipTitle, JHtmlGrid::getDisplayTitle($title)));
 
 		if ($order == $selected)
 		{
-			$html .= ' <i class="icon-' . $icon[$index] . '"></i>';
+			$ui->addChild('i' , array('class' => 'icon-' . $icon[$index]));
 		}
 
-		$html .= '</a>';
-
-		return $html;
+		return $ui->__toString();
 	}
 
+	/**
+	 * Method to get either a literal string or a translated string from a title input
+	 * I don't really want to do this, but apparently its ok to send an array as the title, so at least I can isolate it here.
+	 * One day it would be good to get rid of this and sending a title as an array.
+	 *
+	 * @param $title
+	 *
+	 * @return string
+	 */
+	public static function getDisplayTitle($title)
+	{
+		if (isset($title['0']) && $title['0'] == '<')
+		{
+			return $title;
+		}
+
+		return JText::_($title);
+	}
 	/**
 	 * Method to check all checkboxes in a grid
 	 *
@@ -124,8 +135,8 @@ abstract class JHtmlGrid
 	{
 		JHtml::_('bootstrap.tooltip');
 
-		return '<input type="checkbox" name="' . $name . '" value="" class="hasTooltip" title="' . JHtml::tooltipText($tip)
-			. '" onclick="' . $action . '" />';
+		$ui = new JHtmlElement('input', array('type'=>'checkbox', 'name' => $name, 'class' => 'hasTooltip', 'title' => JHtml::tooltipText($tip), 'onclick' => $action));
+		return $ui->__toString();
 	}
 
 	/**
@@ -143,8 +154,15 @@ abstract class JHtmlGrid
 	 */
 	public static function id($rowNum, $recId, $checkedOut = false, $name = 'cid', $stub = 'cb')
 	{
-		return $checkedOut ? '' : '<input type="checkbox" id="' . $stub . $rowNum . '" name="' . $name . '[]" value="' . $recId
-			. '" onclick="Joomla.isChecked(this.checked);" />';
+		if($checkedOut)
+		{
+			return '';
+		}
+
+		$action = 'Joomla.isChecked(this.checked);';
+		$ui = new JHtmlElement('input', array('type' => 'checkbox', 'id' =>  $stub . $rowNum, 'name' => $name.'[]', 'value'=> $recId, 'onclick' => $action));
+
+		return $ui->__toString();
 	}
 
 	/**
@@ -212,10 +230,13 @@ abstract class JHtmlGrid
 		$img = $value ? $img1 : $img0;
 		$task = $value ? 'unpublish' : 'publish';
 		$alt = $value ? JText::_('JPUBLISHED') : JText::_('JUNPUBLISHED');
-		$action = $value ? JText::_('JLIB_HTML_UNPUBLISH_ITEM') : JText::_('JLIB_HTML_PUBLISH_ITEM');
+		$title = $value ? JText::_('JLIB_HTML_UNPUBLISH_ITEM') : JText::_('JLIB_HTML_PUBLISH_ITEM');
+		$onClick = 'return listItemTask(\'cb' . $i . '\',\'' . $prefix . $task . '\')';
 
-		return '<a href="#" onclick="return listItemTask(\'cb' . $i . '\',\'' . $prefix . $task . '\')" title="' . $action . '">'
-			. JHtml::_('image', 'admin/' . $img, $alt, null, true) . '</a>';
+		$ui = new JHtmlElement('a', array('href' => '#', 'title' => $title, 'onclick' => $onClick));
+		$ui->addChild('img', array('src' => 'admin/' . $img, 'alt' => $alt));
+
+		return $ui->__toString();
 	}
 
 	/**
@@ -271,9 +292,13 @@ abstract class JHtmlGrid
 	 */
 	public static function order($rows, $image = 'filesave.png', $task = 'saveorder')
 	{
-		return '<a href="javascript:saveorder('
-			. (count($rows) - 1) . ', \'' . $task . '\')" rel="tooltip" class="saveorder btn btn-micro pull-right" title="'
-			. JText::_('JLIB_HTML_SAVE_ORDER') . '"><i class="icon-menu-2"></i></a>';
+		$href = 'javascript:saveorder(' . (count($rows) - 1) . ', \'' . $task . '\')';
+		$class = 'saveorder btn btn-micro pull-right';
+		$title =  JText::_('JLIB_HTML_SAVE_ORDER');
+
+		$ui = new JHtmlElement('a', array('href' => $href, 'rel' => 'tooltip', 'class' => $class, 'title' => $title));
+		$ui->addChild('i', array('class' => 'icon-menu-2'));
+		return $ui->__toString();
 	}
 
 	/**
